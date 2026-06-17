@@ -1,8 +1,8 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <shellapi.h>
-#include <exdisp.h>     // IShellWindows や IWebBrowser2 を使うため
-#include <shlguid.h>    // CLSID_ShellWindows を使うため
-#include <shlwapi.h>    // パス変換関数（PathCreateFromUrlW）を使うため
+#include <exdisp.h>
+#include <shlguid.h>
+#include <shlwapi.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -11,25 +11,21 @@
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "user32.lib")
-#pragma comment(lib, "shlwapi.lib") // パス変換用
-#pragma comment(lib, "ole32.lib")   // COM用 (CoInitialize等)
-#pragma comment(lib, "oleaut32.lib")// COM用 (Variant等)
+#pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "oleaut32.lib")
 
-// 古いWindows 10 SDK環境対策
 #ifndef SH_HWND
 typedef HWND SH_HWND;
 #endif
 
-// フォルダ情報を格納する構造体
 struct PortalFolder {
     std::wstring name;
     std::wstring path;
 };
 
-// 登録されたフォルダの一覧
 std::vector<PortalFolder> g_folders;
 
-// UTF-8の日本語テキストを、C++用のワイド文字列（wstring）に正しく変換するヘルパー関数
 std::wstring MultiByteToWide(const std::string& str) {
     if (str.empty()) return L"";
     int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), NULL, 0);
@@ -38,7 +34,6 @@ std::wstring MultiByteToWide(const std::string& str) {
     return wstr;
 }
 
-// デフォルトの設定ファイルを自動作成する関数
 void CreateDefaultConfig() {
     std::ofstream ofs("folders.txt");
     if (ofs) {
@@ -48,7 +43,6 @@ void CreateDefaultConfig() {
     }
 }
 
-// 設定ファイル（folders.txt）からフォルダ一覧を読み込む関数
 void LoadConfig() {
     g_folders.clear();
     std::ifstream ifs("folders.txt");
@@ -63,7 +57,6 @@ void LoadConfig() {
     while (std::getline(ifs, line)) {
         if (isFirstLine) {
             isFirstLine = false;
-            // メモ帳が自動付与するBOM(目印)を検知して取り除く
             if (line.size() >= 3 && 
                 (unsigned char)line[0] == 0xEF && 
                 (unsigned char)line[1] == 0xBB && 
@@ -85,9 +78,6 @@ void LoadConfig() {
     }
 }
 
-// ★【今回のブラッシュアップ】
-// 現在Windowsで開いている「一致するフォルダのエクスプローラー窓」を「すべて」最前面にする関数
-// 最前面にできた窓が1つでもあれば true を、1つもなければ false を返します
 bool BringExplorerWindowsToFront(const std::wstring& targetPath) {
     bool anyBroughtToFront = false;
 
@@ -97,7 +87,6 @@ bool BringExplorerWindowsToFront(const std::wstring& targetPath) {
         long count = 0;
         pShellWindows->get_Count(&count);
 
-        // すべてのエクスプローラーを最後まで巡回する
         for (long i = 0; i < count; ++i) {
             VARIANT v;
             VariantInit(&v);
@@ -127,21 +116,14 @@ bool BringExplorerWindowsToFront(const std::wstring& targetPath) {
                             if (!path1.empty() && path1.back() == L'\\') path1.pop_back();
                             if (!path2.empty() && path2.back() == L'\\') path2.pop_back();
 
-                            // パスが一致した場合
                             if (_wcsicmp(path1.c_str(), path2.c_str()) == 0) {
-                                // 窓を復元して表示
                                 if (IsIconic(hwnd)) {
                                     ShowWindow(hwnd, SW_RESTORE);
                                 } else {
                                     ShowWindow(hwnd, SW_SHOW);
                                 }
-                                // 最前面に持ってくる
                                 SetForegroundWindow(hwnd);
                                 anyBroughtToFront = true;
-
-                                // ★【ポイント】
-                                // ここにあった break を消したことで、2枚目、3枚目の一致する窓も
-                                // すべて順番に最前面に呼び出されるようになります。
                             }
                         }
                     }
@@ -224,8 +206,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (id >= 100 && id < 100 + g_folders.size()) {
             size_t index = id - 100;
 
-            // ★【修正ポイント】
-            // 一致するフォルダをすべて最前面化。1枚も開いていなかった（falseが返った）場合のみ新規作成
             if (!BringExplorerWindowsToFront(g_folders[index].path)) {
                 std::wstring param = L"\"" + g_folders[index].path + L"\"";
                 ShellExecuteW(NULL, L"open", L"explorer.exe", param.c_str(), NULL, SW_SHOWNORMAL);
