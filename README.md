@@ -1,5 +1,41 @@
 # Folder Portal
 
+A lightweight, zero-install folder shortcut launcher for Windows built with Win32 C++. 
+Windows向けの超軽量なフォルダショートカット・ランチャーです。Win32 APIで構築されているため、インストール不要で一瞬で起動します。
+
+---
+
+## English Edition
+
+### Features
+
+- **Dynamic Buttons**: Automatically generates shortcut buttons based on `folders.txt`.
+- **Auto-Resizing Window**: The window dynamically adjusts its height to perfectly fit the number of registered buttons.
+- **Zero-Setup (Self-Generating Config)**: If `folders.txt` does not exist, the app automatically creates it with safe default directories.
+- **Intuitive Multi-Window Control**:
+  - **Left-Click**: Opens the folder in a **new** Explorer window every time.
+  - **Right-Click**: Searches for currently open Explorer windows for that path. If found, restores and brings **all** matching windows to the front. If not found, launches a new one.
+
+### How to Use
+
+1. Run `FolderPortal.exe`. (A default `folders.txt` will be automatically generated in the same folder).
+2. Click the "⚙ Settings" button to edit the configuration in Notepad.
+   - Format: `DisplayName,C:\Path\To\Folder`
+3. Relaunch the app to apply your changes.
+
+### Build Instructions
+
+#### Using Visual Studio (MSVC)
+1. Create a C++ "Windows Desktop Wizard" project and select the "Empty Project" option.
+2. Go to **Project Properties -> Linker -> System -> SubSystem** and change it to `Windows (/SUBSYSTEM:WINDOWS)`.
+3. Add `main.cpp` to your source files and build/run.
+
+#### Using Command Line (g++)
+If you have a MinGW environment (like w64devkit), you can compile it with:
+```bash
+g++ -O3 -mwindows main.cpp -o FolderPortal.exe -lshlwapi -lole32 -loleaut32
+
+日本語版
 Windows向けの超軽量なフォルダショートカット・ランチャーです。
 Win32 APIを直接叩いて構築しているため、一切のインストールが不要で、一瞬で起動します。
 
