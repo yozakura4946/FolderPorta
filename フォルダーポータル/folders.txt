@@ -1,1 +1,3 @@
-開発場所,D:\試作品
+Documents,C:\Users\Public\Documents
+Downloads,C:\Users\Public\Downloads
+Windows System,C:\Windows
